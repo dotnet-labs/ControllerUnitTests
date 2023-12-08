@@ -1,43 +1,30 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
-namespace MyWebApp.Controllers
+namespace MyWebApp.Controllers;
+
+[ApiController]
+[Route("[controller]")]
+public class ValuesController(ILogger<ValuesController> logger) : ControllerBase
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class ValuesController : ControllerBase
+    [HttpGet]
+    public ActionResult Get()
     {
-        private readonly ILogger<ValuesController> _logger;
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userRole = User.FindFirstValue(ClaimTypes.Role);
+        logger.LogInformation("User ID = {userId}, Role = {userRole}", userId, userRole);
+        return Ok(userRole == "Admin" ? ["value1", "value2"] : Array.Empty<string>());
+    }
 
-        public ValuesController(ILogger<ValuesController> logger)
+    [HttpGet("{id:int}")]
+    public ActionResult GetValueById(int id)
+    {
+        var lang = Request.Headers["lang"].ToString();
+        var value = lang switch
         {
-            _logger = logger;
-        }
-
-        [HttpGet]
-        public ActionResult Get()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userRole = User.FindFirstValue(ClaimTypes.Role);
-            _logger.LogInformation($"User ID = {userId}, Role = {userRole}");
-            if (userRole != "Admin")
-            {
-                return Ok(new string[] { });
-            }
-            return Ok(new[] { "value1", "value2" });
-        }
-
-        [HttpGet("{id:int}")]
-        public ActionResult GetValueById(int id)
-        {
-            var lang = Request.Headers["lang"].ToString();
-            var value = lang switch
-            {
-                "eng" => "value" + id,
-                _ => id.ToString()
-            };
-            return Ok(value);
-        }
+            "eng" => "value" + id,
+            _ => id.ToString()
+        };
+        return Ok(value);
     }
 }
